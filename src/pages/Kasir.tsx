@@ -1,16 +1,14 @@
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
-import { useAuth } from "@/hooks/use-auth";
 import { formatRupiah } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useMutation, useQuery } from "convex/react";
+import { supabase } from "@/lib/supabase";
+import type { Kategori, Produk, Transaksi } from "@/lib/types";
+import { useProduk } from "@/hooks/use-produk";
 import {
   ArrowRight,
   History,
   Loader2,
-  LogOut,
   MonitorPlay,
   Plus,
   RefreshCw,
@@ -18,8 +16,8 @@ import {
   Trash2,
   UtensilsCrossed,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
 
 type CartItem = { qty: number };
@@ -34,7 +32,24 @@ type TabId = (typeof TABS)[number]["id"];
 
 const KATEGORI_FILTERS = ["Semua", "Makanan", "Minuman"] as const;
 type KategoriFilter = (typeof KATEGORI_FILTERS)[number];
-type Kategori = "Makanan" | "Minuman";
+
+const SAMPLE_MENU: Omit<Produk, "id" | "created_at">[] = [
+  { nama: "Kopi Hitam", kategori: "Minuman", harga: 18000, stok: 40, status: "Tampilkan" },
+  { nama: "Kopi Susu Gula Aren", kategori: "Minuman", harga: 24000, stok: 35, status: "Tampilkan" },
+  { nama: "Es Teh Manis", kategori: "Minuman", harga: 8000, stok: 60, status: "Tampilkan" },
+  { nama: "Teh Tarik", kategori: "Minuman", harga: 15000, stok: 25, status: "Tampilkan" },
+  { nama: "Nasi Goreng Spesial", kategori: "Makanan", harga: 28000, stok: 20, status: "Tampilkan" },
+  { nama: "Mie Goreng Jawa", kategori: "Makanan", harga: 24000, stok: 0, status: "Tampilkan" },
+  { nama: "Kentang Goreng", kategori: "Makanan", harga: 18000, stok: 30, status: "Tampilkan" },
+  { nama: "Roti Bakar Coklat", kategori: "Makanan", harga: 16000, stok: 18, status: "Tampilkan" },
+  { nama: "Pisang Goreng", kategori: "Makanan", harga: 12000, stok: 22, status: "Tampilkan" },
+  { nama: "Es Jeruk", kategori: "Minuman", harga: 12000, stok: 45, status: "Tampilkan" },
+  { nama: "Coklat Panas", kategori: "Minuman", harga: 17000, stok: 15, status: "Tampilkan" },
+  { nama: "Brownies Lumer", kategori: "Makanan", harga: 22000, stok: 12, status: "Tampilkan" },
+  { nama: "Air Mineral", kategori: "Minuman", harga: 5000, stok: 100, status: "Tampilkan" },
+  { nama: "Jus Alpukat", kategori: "Minuman", harga: 20000, stok: 0, status: "Tampilkan" },
+  { nama: "Donat Gula", kategori: "Makanan", harga: 10000, stok: 28, status: "Sembunyikan" },
+];
 
 function KategoriChip({ kategori }: { kategori: Kategori }) {
   return (
@@ -71,15 +86,11 @@ function StockBadge({ stok }: { stok: number }) {
 }
 
 export default function Kasir() {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-
-  const produk = useQuery(api.produk.list, {});
+  const { produk, error: produkError, reload } = useProduk();
   const [cart, setCart] = useState<Record<string, CartItem>>({});
   const [tab, setTab] = useState<TabId>("kasir");
 
   // ---- checkout ----
-  const simpanTransaksi = useMutation(api.transaksi.simpanTransaksi);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const cartIds = Object.keys(cart);
@@ -87,12 +98,11 @@ export default function Kasir() {
     () =>
       cartIds
         .map((id) => {
-          const p = (produk ?? []).find((x) => x._id === id);
+          const p = (produk ?? []).find((x) => x.id === id);
           return p ? { produk: p, qty: cart[id].qty } : null;
         })
         .filter(
-          (x): x is { produk: NonNullable<typeof produk>[number]; qty: number } =>
-            x !== null,
+          (x): x is { produk: Produk; qty: number } => x !== null,
         ),
     [cart, cartIds, produk],
   );
@@ -106,8 +116,8 @@ export default function Kasir() {
     [cartRows],
   );
 
-  const addToCart = (id: Id<"produk">) => {
-    const p = (produk ?? []).find((x) => x._id === id);
+  const addToCart = (id: string) => {
+    const p = (produk ?? []).find((x) => x.id === id);
     if (!p) return;
     if (p.stok <= 0) {
       toast.error(`Stok ${p.nama} habis - tidak dapat ditambahkan.`);
@@ -121,8 +131,8 @@ export default function Kasir() {
     setCart((c) => ({ ...c, [id]: { qty: current + 1 } }));
   };
 
-  const changeQty = (id: Id<"produk">, delta: number) => {
-    const p = (produk ?? []).find((x) => x._id === id);
+  const changeQty = (id: string, delta: number) => {
+    const p = (produk ?? []).find((x) => x.id === id);
     const current = cart[id]?.qty ?? 0;
     const next = current + delta;
     if (next <= 0) {
@@ -149,15 +159,18 @@ export default function Kasir() {
     }
     setCheckoutLoading(true);
     try {
-      const result = await simpanTransaksi({
-        keranjang: cartRows.map((r) => ({ id: r.produk._id, qty: r.qty })),
-        totalBayar,
+      const { data, error } = await supabase.rpc("checkout", {
+        p_keranjang: cartRows.map((r) => ({ id: r.produk.id, qty: r.qty })),
+        p_total: totalBayar,
       });
-      if (result.success) {
+      if (error) throw new Error(error.message);
+      const result = data as { success: boolean; trxId: string } | null;
+      if (result?.success) {
         toast.success(
           `Transaksi ${result.trxId} berhasil. Stok otomatis diperbarui.`,
         );
         clearCart();
+        await reload();
       }
     } catch (err) {
       const message =
@@ -166,11 +179,6 @@ export default function Kasir() {
     } finally {
       setCheckoutLoading(false);
     }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
   };
 
   return (
@@ -187,7 +195,7 @@ export default function Kasir() {
                 Warung Kita
               </p>
               <p className="text-xs font-semibold uppercase tracking-widest opacity-60">
-                {user?.name ?? "Monitor 1"}
+                Monitor 1
               </p>
             </div>
           </div>
@@ -202,14 +210,6 @@ export default function Kasir() {
                 <MonitorPlay className="size-4" />
                 Buka Display
               </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-none border-2 border-neo-ink bg-neo-paper neo-shadow-sm neo-press-sm uppercase font-bold"
-              onClick={handleSignOut}
-            >
-              <LogOut className="size-4" />
-              Keluar
             </Button>
           </div>
         </div>
@@ -238,6 +238,7 @@ export default function Kasir() {
       {tab === "kasir" && (
         <KasirView
           produk={produk}
+          error={produkError}
           cart={cart}
           cartRows={cartRows}
           totalBayar={totalBayar}
@@ -249,7 +250,9 @@ export default function Kasir() {
           checkoutLoading={checkoutLoading}
         />
       )}
-      {tab === "menu" && <MenuManager />}
+      {tab === "menu" && (
+        <MenuManager produk={produk} error={produkError} onChanged={reload} />
+      )}
       {tab === "riwayat" && <RiwayatView />}
     </div>
   );
@@ -258,16 +261,14 @@ export default function Kasir() {
 /* ============================ KASIR VIEW ============================ */
 
 type KasirViewProps = {
-  produk: ReturnType<typeof useQuery<typeof api.produk.list>>;
+  produk: Produk[] | null;
+  error: string | null;
   cart: Record<string, CartItem>;
-  cartRows: {
-    produk: NonNullable<ReturnType<typeof useQuery<typeof api.produk.list>>>[number];
-    qty: number;
-  }[];
+  cartRows: { produk: Produk; qty: number }[];
   totalBayar: number;
   totalItems: number;
-  addToCart: (id: Id<"produk">) => void;
-  changeQty: (id: Id<"produk">, delta: number) => void;
+  addToCart: (id: string) => void;
+  changeQty: (id: string, delta: number) => void;
   clearCart: () => void;
   handleCheckout: () => void;
   checkoutLoading: boolean;
@@ -275,6 +276,7 @@ type KasirViewProps = {
 
 function KasirView({
   produk,
+  error,
   cart,
   cartRows,
   totalBayar,
@@ -308,11 +310,11 @@ function KasirView({
               - tap produk untuk menambah
             </span>
           </h2>
-          {produk === undefined && <Loader2 className="size-5 animate-spin" />}
+          {produk == null && <Loader2 className="size-5 animate-spin" />}
         </div>
 
         {/* Category filter buttons */}
-        {produk !== undefined && (
+        {produk != null && (
           <div className="mb-4 flex flex-wrap gap-2">
             {KATEGORI_FILTERS.map((k) => (
               <button
@@ -330,10 +332,16 @@ function KasirView({
           </div>
         )}
 
-        {produk === undefined ? (
-          <p className="text-sm font-semibold uppercase opacity-60 animate-pulse">
-            Memuat menu...
-          </p>
+        {produk == null ? (
+          error ? (
+            <p className="text-sm font-semibold uppercase text-neo-red">
+              Gagal memuat menu: {error}
+            </p>
+          ) : (
+            <p className="text-sm font-semibold uppercase opacity-60 animate-pulse">
+              Memuat menu...
+            </p>
+          )
         ) : filtered.length === 0 ? (
           <div className="border-[3px] border-dashed border-neo-ink bg-neo-paper p-8 text-center">
             <p className="text-lg font-black uppercase">
@@ -346,11 +354,11 @@ function KasirView({
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
             {filtered.map((p) => {
-              const inCart = (cart[p._id]?.qty ?? 0) > 0;
+              const inCart = (cart[p.id]?.qty ?? 0) > 0;
               return (
                 <button
-                  key={p._id}
-                  onClick={() => addToCart(p._id)}
+                  key={p.id}
+                  onClick={() => addToCart(p.id)}
                   disabled={p.stok <= 0}
                   className={`group flex min-h-36 flex-col items-start justify-between gap-2 border-[3px] border-neo-ink p-3 text-left transition-transform neo-press ${
                     p.stok <= 0
@@ -373,7 +381,7 @@ function KasirView({
                     </p>
                     {inCart ? (
                       <span className="border-2 border-neo-ink bg-neo-ink px-2 py-0.5 text-xs font-black uppercase text-neo-cream">
-                        {cart[p._id].qty}x
+                        {cart[p.id].qty}x
                       </span>
                     ) : (
                       <span className="flex size-7 items-center justify-center border-2 border-neo-ink bg-neo-yellow text-sm font-black transition-transform group-hover:rotate-90">
@@ -414,7 +422,7 @@ function KasirView({
               <ul className="flex flex-col gap-3">
                 {cartRows.map(({ produk: p, qty }) => (
                   <li
-                    key={p._id}
+                    key={p.id}
                     className="flex items-center justify-between gap-2 border-2 border-neo-ink bg-neo-cream p-2"
                   >
                     <div className="min-w-0">
@@ -427,7 +435,7 @@ function KasirView({
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
                       <button
-                        onClick={() => changeQty(p._id, -1)}
+                        onClick={() => changeQty(p.id, -1)}
                         className="flex size-7 items-center justify-center border-2 border-neo-ink bg-neo-paper text-base font-black neo-press-sm"
                         aria-label={`Kurangi ${p.nama}`}
                       >
@@ -437,7 +445,7 @@ function KasirView({
                         {qty}
                       </span>
                       <button
-                        onClick={() => changeQty(p._id, 1)}
+                        onClick={() => changeQty(p.id, 1)}
                         className="flex size-7 items-center justify-center border-2 border-neo-ink bg-neo-yellow text-base font-black neo-press-sm"
                         aria-label={`Tambah ${p.nama}`}
                       >
@@ -501,9 +509,7 @@ function KasirView({
 function EmptyMenuNotice() {
   return (
     <div className="border-[3px] border-dashed border-neo-ink bg-neo-paper p-8 text-center">
-      <p className="text-lg font-black uppercase">
-        Menu masih kosong
-      </p>
+      <p className="text-lg font-black uppercase">Menu masih kosong</p>
       <p className="mt-1 text-sm font-semibold opacity-60">
         Muat menu contoh atau tambahkan produk secara manual di tab "Atur Menu".
       </p>
@@ -511,11 +517,15 @@ function EmptyMenuNotice() {
   );
 }
 
-function MenuManager() {
-  const produk = useQuery(api.produk.list, {});
-  const seed = useMutation(api.produk.seed);
-  const save = useMutation(api.produk.save);
-  const remove = useMutation(api.produk.remove);
+function MenuManager({
+  produk,
+  error,
+  onChanged,
+}: {
+  produk: Produk[] | null;
+  error: string | null;
+  onChanged: () => Promise<void>;
+}) {
   const [seeding, setSeeding] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -528,8 +538,18 @@ function MenuManager() {
   const handleSeed = async () => {
     setSeeding(true);
     try {
-      const r = await seed();
-      toast.success(r.message ?? "Menu contoh dimuat.");
+      const { count, error: countError } = await supabase
+        .from("produk")
+        .select("*", { count: "exact", head: true });
+      if (countError) throw countError;
+      if (count && count > 0) {
+        toast.success("Menu sudah berisi data.");
+        return;
+      }
+      const { error } = await supabase.from("produk").insert(SAMPLE_MENU);
+      if (error) throw error;
+      toast.success("Menu contoh berhasil dimuat.");
+      await onChanged();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal memuat contoh.");
     } finally {
@@ -547,11 +567,19 @@ function MenuManager() {
       return toast.error("Stok harus angka valid.");
     setSaving(true);
     try {
-      await save({ nama, kategori, harga: hargaNum, stok: stokNum, status });
+      const { error } = await supabase.from("produk").insert({
+        nama: nama.trim(),
+        kategori,
+        harga: hargaNum,
+        stok: stokNum,
+        status,
+      });
+      if (error) throw error;
       toast.success(`Produk "${nama}" disimpan.`);
       setNama("");
       setHarga("");
       setStok("");
+      await onChanged();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal menyimpan.");
     } finally {
@@ -560,30 +588,29 @@ function MenuManager() {
   };
 
   const toggleStatus = async (
-    id: Id<"produk">,
+    id: string,
     current: string,
     pNama: string,
   ) => {
-    const existing = (produk ?? []).find((x) => x._id === id);
     try {
-      await save({
-        id,
-        nama: pNama,
-        kategori: existing?.kategori ?? "Makanan",
-        harga: existing?.harga ?? 0,
-        stok: existing?.stok ?? 0,
-        status: current === "Tampilkan" ? "Sembunyikan" : "Tampilkan",
-      });
+      const { error } = await supabase
+        .from("produk")
+        .update({ status: current === "Tampilkan" ? "Sembunyikan" : "Tampilkan" })
+        .eq("id", id);
+      if (error) throw error;
       toast.success(`Status "${pNama}" diubah.`);
+      await onChanged();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal mengubah status.");
     }
   };
 
-  const handleRemove = async (id: Id<"produk">, pNama: string) => {
+  const handleRemove = async (id: string, pNama: string) => {
     try {
-      await remove({ id });
+      const { error } = await supabase.from("produk").delete().eq("id", id);
+      if (error) throw error;
       toast.success(`Produk "${pNama}" dihapus.`);
+      await onChanged();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal menghapus.");
     }
@@ -694,17 +721,23 @@ function MenuManager() {
       </form>
 
       {/* Product list */}
-      {produk === undefined ? (
-        <p className="text-sm font-semibold uppercase opacity-60 animate-pulse">
-          Memuat menu...
-        </p>
+      {produk == null ? (
+        error ? (
+          <p className="text-sm font-semibold uppercase text-neo-red">
+            Gagal memuat menu: {error}
+          </p>
+        ) : (
+          <p className="text-sm font-semibold uppercase opacity-60 animate-pulse">
+            Memuat menu...
+          </p>
+        )
       ) : produk.length === 0 ? (
         <EmptyMenuNotice />
       ) : (
         <ul className="flex flex-col gap-2">
           {produk.map((p) => (
             <li
-              key={p._id}
+              key={p.id}
               className="flex flex-wrap items-center justify-between gap-3 border-2 border-neo-ink bg-neo-paper p-3"
             >
               <div className="min-w-0">
@@ -727,7 +760,7 @@ function MenuManager() {
                   variant="outline"
                   size="sm"
                   className="rounded-none border-2 border-neo-ink bg-neo-paper font-black uppercase neo-press-sm"
-                  onClick={() => toggleStatus(p._id, p.status, p.nama)}
+                  onClick={() => toggleStatus(p.id, p.status, p.nama)}
                 >
                   {p.status === "Tampilkan" ? "Sembunyikan" : "Tampilkan"}
                 </Button>
@@ -735,7 +768,7 @@ function MenuManager() {
                   variant="outline"
                   size="sm"
                   className="rounded-none border-2 border-neo-ink bg-neo-red font-black uppercase text-white neo-press-sm"
-                  onClick={() => handleRemove(p._id, p.nama)}
+                  onClick={() => handleRemove(p.id, p.nama)}
                 >
                   <Trash2 className="size-4" />
                 </Button>
@@ -751,18 +784,47 @@ function MenuManager() {
 /* ============================ RIWAYAT VIEW ============================ */
 
 function RiwayatView() {
-  const transaksi = useQuery(api.transaksi.list);
+  const [transaksi, setTransaksi] = useState<Transaksi[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("transaksi")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (!active) return;
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      setTransaksi(
+        ((data ?? []) as Array<Record<string, unknown>>).map((r) => ({
+          id: String(r.id),
+          trx_id: String(r.trx_id),
+          detail: String(r.detail),
+          total_bayar: Number(r.total_bayar),
+          created_at: String(r.created_at),
+        })),
+      );
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
-      <h2 className="mb-4 text-2xl font-black uppercase">
-        Riwayat Transaksi
-      </h2>
-      {transaksi === undefined ? (
+      <h2 className="mb-4 text-2xl font-black uppercase">Riwayat Transaksi</h2>
+      {transaksi == null && error === null ? (
         <p className="text-sm font-semibold uppercase opacity-60 animate-pulse">
           Memuat riwayat...
         </p>
-      ) : transaksi.length === 0 ? (
+      ) : error ? (
+        <p className="text-sm font-semibold uppercase text-neo-red">{error}</p>
+      ) : (transaksi ?? []).length === 0 ? (
         <div className="border-[3px] border-dashed border-neo-ink bg-neo-paper p-8 text-center">
           <p className="text-lg font-black uppercase">Belum ada transaksi</p>
           <p className="mt-1 text-sm font-semibold opacity-60">
@@ -771,23 +833,23 @@ function RiwayatView() {
         </div>
       ) : (
         <ul className="flex flex-col gap-2">
-          {transaksi.map((t) => (
+          {(transaksi ?? []).map((t) => (
             <li
-              key={t._id}
+              key={t.id}
               className="flex flex-wrap items-center justify-between gap-3 border-2 border-neo-ink bg-neo-paper p-3"
             >
               <div className="min-w-0">
-                <p className="font-mono text-sm font-black">{t.trxId}</p>
+                <p className="font-mono text-sm font-black">{t.trx_id}</p>
                 <p className="truncate text-sm font-semibold opacity-70">
                   {t.detail}
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-lg font-black">
-                  {formatRupiah(t.totalBayar)}
+                  {formatRupiah(t.total_bayar)}
                 </span>
                 <span className="text-xs font-bold uppercase opacity-50">
-                  {new Date(t.createdAt).toLocaleString("id-ID", {
+                  {new Date(t.created_at).toLocaleString("id-ID", {
                     day: "2-digit",
                     month: "short",
                     hour: "2-digit",

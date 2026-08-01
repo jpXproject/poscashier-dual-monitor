@@ -109,7 +109,7 @@ export default function Landing() {
             </Link>
           </div>
           <p className="mt-4 text-xs font-bold uppercase tracking-widest opacity-50">
-            Kasir butuh login - Display bebas diakses pelanggan
+            Tanpa login - langsung buka kasir, display bebas diakses pelanggan
           </p>
         </div>
 
@@ -213,15 +213,15 @@ export default function Landing() {
             Siap mulai melayani?
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-sm font-semibold uppercase tracking-widest opacity-70">
-            Login sebagai kasir untuk membuka Monitor 1, lalu buka /display
-            pada layar pelanggan.
+            Buka Monitor 1 untuk kasir, dan /display pada layar pelanggan.
+            Tanpa login, langsung melayani.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link
               to="/kasir"
               className="flex items-center gap-2 border-[3px] border-neo-cream bg-neo-yellow px-6 py-3 text-base font-black uppercase text-neo-ink neo-shadow neo-press"
             >
-              Masuk ke Kasir
+              Buka Kasir
               <ArrowRight className="size-5" />
             </Link>
             <Link

@@ -1,8 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
-import { RequireAuth } from "@/components/RequireAuth";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
-import { ConvexAuthProvider } from "@convex-dev/auth/react";
-import { ConvexReactClient } from "convex/react";
 import React, { StrictMode, useEffect, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -16,7 +13,6 @@ import "./index.css";
 
 // Lazy load route components for better code splitting
 const Landing = lazy(() => import("./pages/Landing.tsx"));
-const AuthPage = lazy(() => import("./pages/Auth.tsx"));
 const Kasir = lazy(() => import("./pages/Kasir.tsx"));
 const Display = lazy(() => import("./pages/Display.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -86,10 +82,6 @@ class RootErrorBoundary extends React.Component<
   }
 }
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
-
-
-
 function RouteSyncer() {
   const location = useLocation();
   useEffect(() => {
@@ -113,45 +105,27 @@ function RouteSyncer() {
   return null;
 }
 
-
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <RootErrorBoundary>
       <ToolbarErrorBoundary>
         <VlyToolbar />
       </ToolbarErrorBoundary>
-      <ConvexAuthProvider client={convex}>
-        <BrowserRouter>
-          <RouteSyncer />
-          <Suspense fallback={<RouteLoading />}>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              {/* Auth - after sign-in, go straight to the cashier (Monitor 1) */}
-              <Route
-                path="/auth"
-                element={<AuthPage redirectAfterAuth="/kasir" />}
-              />
-              <Route
-                path="/dashboard"
-                element={<Navigate to="/kasir" replace />}
-              />
-              {/* Monitor 1 - cashier (signed-in only) */}
-              <Route
-                path="/kasir"
-                element={
-                  <RequireAuth>
-                    <Kasir />
-                  </RequireAuth>
-                }
-              />
-              {/* Monitor 2 - public menu display for customers */}
-              <Route path="/display" element={<Display />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-        <Toaster />
-      </ConvexAuthProvider>
+      <BrowserRouter>
+        <RouteSyncer />
+        <Suspense fallback={<RouteLoading />}>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/dashboard" element={<Navigate to="/kasir" replace />} />
+            {/* Monitor 1 - cashier (no login needed) */}
+            <Route path="/kasir" element={<Kasir />} />
+            {/* Monitor 2 - public menu display for customers */}
+            <Route path="/display" element={<Display />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+      <Toaster />
     </RootErrorBoundary>
   </StrictMode>,
 );

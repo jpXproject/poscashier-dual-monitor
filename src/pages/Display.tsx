@@ -1,6 +1,6 @@
-import { api } from "@/convex/_generated/api";
 import { formatRupiah } from "@/lib/utils";
-import { useQuery } from "convex/react";
+import { useProduk } from "@/hooks/use-produk";
+import type { Kategori } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 
@@ -8,7 +8,6 @@ const POLL_MS = 4000;
 
 const KATEGORI_FILTERS = ["Semua", "Makanan", "Minuman"] as const;
 type KategoriFilter = (typeof KATEGORI_FILTERS)[number];
-type Kategori = "Makanan" | "Minuman";
 
 function KategoriChip({ kategori }: { kategori: Kategori }) {
   return (
@@ -44,7 +43,7 @@ export default function Display() {
     return () => clearInterval(id);
   }, []);
 
-  const produk = useQuery(api.produk.list, { tampilOnly: true, tick });
+  const { produk, error } = useProduk(true, tick);
   const now = useClock();
 
   const [filter, setFilter] = useState<KategoriFilter>("Semua");
@@ -92,7 +91,7 @@ export default function Display() {
       </header>
 
       {/* Category filter buttons */}
-      {produk !== undefined && (
+      {produk != null && (
         <div className="flex flex-wrap items-center justify-center gap-3 border-b-[3px] border-neo-cream px-6 py-4">
           {KATEGORI_FILTERS.map((k) => (
             <button
@@ -112,10 +111,16 @@ export default function Display() {
 
       {/* Product grid */}
       <main className="flex-1 px-6 py-8">
-        {produk === undefined ? (
-          <p className="text-2xl font-bold uppercase animate-pulse">
-            Memuat menu...
-          </p>
+        {produk == null ? (
+          error ? (
+            <p className="text-2xl font-bold uppercase text-neo-red">
+              Gagal memuat menu: {error}
+            </p>
+          ) : (
+            <p className="text-2xl font-bold uppercase animate-pulse">
+              Memuat menu...
+            </p>
+          )
         ) : inStock.length === 0 && soldOut.length === 0 ? (
           <div className="border-[3px] border-dashed border-neo-cream p-10 text-center">
             <p className="text-3xl font-black uppercase">
@@ -129,7 +134,7 @@ export default function Display() {
           <div className="grid grid-cols-2 gap-5 md:grid-cols-3 xl:grid-cols-4">
             {inStock.map((p) => (
               <article
-                key={p._id}
+                key={p.id}
                 className="bg-neo-paper text-neo-ink border-[3px] border-neo-cream neo-shadow p-5 flex flex-col justify-between gap-4 min-h-44"
               >
                 <div className="flex items-start justify-between gap-2">
@@ -154,7 +159,7 @@ export default function Display() {
 
             {soldOut.map((p) => (
               <article
-                key={p._id}
+                key={p.id}
                 className="bg-neo-paper text-neo-ink border-[3px] border-neo-cream neo-shadow p-5 flex flex-col justify-between gap-4 min-h-44 opacity-35 saturate-0 transition-opacity duration-500"
                 aria-label={`${p.nama} - habis`}
               >
@@ -207,10 +212,10 @@ export default function Display() {
             untuk layar penuh
           </p>
           <Link
-            to="/"
+            to="/kasir"
             className="border-2 border-neo-cream px-3 py-1 text-sm font-bold uppercase tracking-widest neo-press-sm hover:bg-neo-cream hover:text-neo-ink"
           >
-            {"<- Beranda"}
+            {"<- Kasir"}
           </Link>
         </div>
       </footer>
