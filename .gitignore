@@ -6,14 +6,11 @@ dist/
 build/
 *.local
 
-# Environment files (contain Convex deploy keys - DO NOT commit)
+# Environment files (DO NOT commit)
 .env
 .env.*
 !.env.example
 env.local
-
-# Security: deploy script embeds a Convex deploy key
-scripts/deploy-user-deployment.sh
 
 # Logs & OS
 *.log
@@ -23,10 +20,6 @@ npm-debug.log*
 # Editor
 .vscode/
 .idea/
-
-# Convex
-convex/_generated/
-src/convex/_generated/
 
 # Vite
 vite.config.ts.timestamp-*
