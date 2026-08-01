@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.local
+
+# Environment files (contain Convex deploy keys — DO NOT commit)
+.env
+.env.*
+!.env.example
+env.local
+
+# Security: deploy script embeds a Convex deploy key
+scripts/deploy-user-deployment.sh
+
+# Logs & OS
+*.log
+npm-debug.log*
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Convex
+convex/_generated/
+src/convex/_generated/
+
+# Vite
+vite.config.ts.timestamp-*
