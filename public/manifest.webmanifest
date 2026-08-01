@@ -1,7 +1,7 @@
 {
-  "name": "freebuff.com application",
-  "short_name": "freebuff.com",
-  "description": "freebuff.com application",
+  "name": "POS Dual Monitor",
+  "short_name": "pos-dualmonitor",
+  "description": "POS Dual Monitor application",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

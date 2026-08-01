@@ -127,7 +127,8 @@ export default function Kasir() {
     const next = current + delta;
     if (next <= 0) {
       setCart((c) => {
-        const { [id]: _removed, ...rest } = c;
+        const rest = { ...c };
+        delete rest[id];
         return rest;
       });
       return;

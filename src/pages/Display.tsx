@@ -210,7 +210,7 @@ export default function Display() {
             to="/"
             className="border-2 border-neo-cream px-3 py-1 text-sm font-bold uppercase tracking-widest neo-press-sm hover:bg-neo-cream hover:text-neo-ink"
           >
-            <- Beranda
+            {"<- Beranda"}
           </Link>
         </div>
       </footer>
