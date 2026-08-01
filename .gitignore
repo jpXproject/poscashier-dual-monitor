@@ -6,7 +6,7 @@ dist/
 build/
 *.local
 
-# Environment files (contain Convex deploy keys — DO NOT commit)
+# Environment files (contain Convex deploy keys - DO NOT commit)
 .env
 .env.*
 !.env.example

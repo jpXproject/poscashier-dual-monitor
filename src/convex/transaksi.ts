@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
 /**
- * simpanTransaksi — the checkout handler, mirroring the GAS version:
+ * simpanTransaksi - the checkout handler, mirroring the GAS version:
  *  1. Validates stock for every cart item.
  *  2. Deducts stock directly from the Produk table.
  *  3. Generates a unique transaction id: TRX-[TIMESTAMP].

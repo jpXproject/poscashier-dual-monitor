@@ -110,7 +110,7 @@ export default function Kasir() {
     const p = (produk ?? []).find((x) => x._id === id);
     if (!p) return;
     if (p.stok <= 0) {
-      toast.error(`Stok ${p.nama} habis — tidak dapat ditambahkan.`);
+      toast.error(`Stok ${p.nama} habis - tidak dapat ditambahkan.`);
       return;
     }
     const current = cart[id]?.qty ?? 0;
@@ -304,7 +304,7 @@ function KasirView({
           <h2 className="text-2xl font-black uppercase">
             Menu{" "}
             <span className="text-sm font-bold opacity-50">
-              · tap produk untuk menambah
+              - tap produk untuk menambah
             </span>
           </h2>
           {produk === undefined && <Loader2 className="size-5 animate-spin" />}
@@ -331,7 +331,7 @@ function KasirView({
 
         {produk === undefined ? (
           <p className="text-sm font-semibold uppercase opacity-60 animate-pulse">
-            Memuat menu…
+            Memuat menu...
           </p>
         ) : filtered.length === 0 ? (
           <div className="border-[3px] border-dashed border-neo-ink bg-neo-paper p-8 text-center">
@@ -430,7 +430,7 @@ function KasirView({
                         className="flex size-7 items-center justify-center border-2 border-neo-ink bg-neo-paper text-base font-black neo-press-sm"
                         aria-label={`Kurangi ${p.nama}`}
                       >
-                        −
+                        -
                       </button>
                       <span className="w-7 text-center text-sm font-black">
                         {qty}
@@ -478,7 +478,7 @@ function KasirView({
                 {checkoutLoading ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    Memproses…
+                    Memproses...
                   </>
                 ) : (
                   <>
@@ -695,7 +695,7 @@ function MenuManager() {
       {/* Product list */}
       {produk === undefined ? (
         <p className="text-sm font-semibold uppercase opacity-60 animate-pulse">
-          Memuat menu…
+          Memuat menu...
         </p>
       ) : produk.length === 0 ? (
         <EmptyMenuNotice />
@@ -717,7 +717,7 @@ function MenuManager() {
                   )}
                 </p>
                 <p className="text-sm font-bold opacity-60">
-                  {formatRupiah(p.harga)} · stok {p.stok}
+                  {formatRupiah(p.harga)} - stok {p.stok}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -759,7 +759,7 @@ function RiwayatView() {
       </h2>
       {transaksi === undefined ? (
         <p className="text-sm font-semibold uppercase opacity-60 animate-pulse">
-          Memuat riwayat…
+          Memuat riwayat...
         </p>
       ) : transaksi.length === 0 ? (
         <div className="border-[3px] border-dashed border-neo-ink bg-neo-paper p-8 text-center">

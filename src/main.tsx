@@ -30,7 +30,7 @@ function RouteLoading() {
   );
 }
 
-/** Silent error boundary — if VlyToolbar crashes it renders nothing instead of
+/** Silent error boundary - if VlyToolbar crashes it renders nothing instead of
  *  crashing the whole app (e.g. hook errors in WebContainer environment). */
 class ToolbarErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -126,7 +126,7 @@ createRoot(document.getElementById("root")!).render(
           <Suspense fallback={<RouteLoading />}>
             <Routes>
               <Route path="/" element={<Landing />} />
-              {/* Auth — after sign-in, go straight to the cashier (Monitor 1) */}
+              {/* Auth - after sign-in, go straight to the cashier (Monitor 1) */}
               <Route
                 path="/auth"
                 element={<AuthPage redirectAfterAuth="/kasir" />}
@@ -135,7 +135,7 @@ createRoot(document.getElementById("root")!).render(
                 path="/dashboard"
                 element={<Navigate to="/kasir" replace />}
               />
-              {/* Monitor 1 — cashier (signed-in only) */}
+              {/* Monitor 1 - cashier (signed-in only) */}
               <Route
                 path="/kasir"
                 element={
@@ -144,7 +144,7 @@ createRoot(document.getElementById("root")!).render(
                   </RequireAuth>
                 }
               />
-              {/* Monitor 2 — public menu display for customers */}
+              {/* Monitor 2 - public menu display for customers */}
               <Route path="/display" element={<Display />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

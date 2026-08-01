@@ -25,7 +25,7 @@ export const list = query({
     tick: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    void args.tick; // polling signal only — data is already reactive
+    void args.tick; // polling signal only - data is already reactive
     const all = await ctx.db.query("produk").collect();
     const filtered = args.tampilOnly
       ? all.filter((p) => p.status === TAMPIL)

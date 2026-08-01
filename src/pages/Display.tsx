@@ -67,7 +67,7 @@ export default function Display() {
       <header className="border-b-[3px] border-neo-cream px-6 py-5 flex items-end justify-between gap-4">
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.3em] text-neo-yellow">
-            Menu Digital · Two Monitor POS
+            Menu Digital - Two Monitor POS
           </p>
           <h1 className="mt-1 text-5xl font-black uppercase tracking-tight sm:text-6xl">
             Warung Kita
@@ -114,7 +114,7 @@ export default function Display() {
       <main className="flex-1 px-6 py-8">
         {produk === undefined ? (
           <p className="text-2xl font-bold uppercase animate-pulse">
-            Memuat menu…
+            Memuat menu...
           </p>
         ) : inStock.length === 0 && soldOut.length === 0 ? (
           <div className="border-[3px] border-dashed border-neo-cream p-10 text-center">
@@ -156,7 +156,7 @@ export default function Display() {
               <article
                 key={p._id}
                 className="bg-neo-paper text-neo-ink border-[3px] border-neo-cream neo-shadow p-5 flex flex-col justify-between gap-4 min-h-44 opacity-35 saturate-0 transition-opacity duration-500"
-                aria-label={`${p.nama} — habis`}
+                aria-label={`${p.nama} - habis`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -172,7 +172,7 @@ export default function Display() {
                 <div className="flex items-end justify-between gap-2">
                   {/* Price masked when stock reaches 0 */}
                   <p className="text-3xl font-black line-through decoration-4">
-                    ••••••
+                    ------
                   </p>
                   <span className="border-2 border-neo-ink bg-neo-ink px-2 py-1 text-base font-black uppercase text-neo-cream">
                     Out of Stock
@@ -189,18 +189,18 @@ export default function Display() {
         <div className="overflow-hidden border-b-[3px] border-neo-cream bg-neo-yellow text-neo-ink py-2">
           <div className="neo-marquee flex w-max whitespace-nowrap text-lg font-black uppercase tracking-wide">
             <span className="px-8">
-              Terima kasih sudah berkunjung · Silakan pesan di kasir · Harga
-              sudah termasuk pajak · Enjoy your meal!&nbsp;
+              Terima kasih sudah berkunjung - Silakan pesan di kasir - Harga
+              sudah termasuk pajak - Enjoy your meal!&nbsp;
             </span>
             <span className="px-8">
-              Terima kasih sudah berkunjung · Silakan pesan di kasir · Harga
-              sudah termasuk pajak · Enjoy your meal!&nbsp;
+              Terima kasih sudah berkunjung - Silakan pesan di kasir - Harga
+              sudah termasuk pajak - Enjoy your meal!&nbsp;
             </span>
           </div>
         </div>
         <div className="px-6 py-3 flex items-center justify-between gap-4">
           <p className="text-sm font-bold uppercase tracking-[0.25em]">
-            Kasir Anda · Tekan{" "}
+            Kasir Anda - Tekan{" "}
             <kbd className="border border-neo-cream px-1.5 py-0.5 font-mono">
               F11
             </kbd>{" "}
@@ -210,7 +210,7 @@ export default function Display() {
             to="/"
             className="border-2 border-neo-cream px-3 py-1 text-sm font-bold uppercase tracking-widest neo-press-sm hover:bg-neo-cream hover:text-neo-ink"
           >
-            ← Beranda
+            <- Beranda
           </Link>
         </div>
       </footer>

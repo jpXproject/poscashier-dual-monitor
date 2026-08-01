@@ -76,7 +76,7 @@ export default function Landing() {
       <header className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 lg:grid-cols-2 lg:py-20">
         <div>
           <p className="mb-4 inline-block border-2 border-neo-ink bg-neo-turquoise px-2 py-1 text-xs font-black uppercase tracking-widest neo-shadow-sm">
-            Dua Monitor · Satu Sistem
+            Dua Monitor - Satu Sistem
           </p>
           <h1 className="text-5xl font-black uppercase leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
             Kasir di{" "}
@@ -109,7 +109,7 @@ export default function Landing() {
             </Link>
           </div>
           <p className="mt-4 text-xs font-bold uppercase tracking-widest opacity-50">
-            Kasir butuh login · Display bebas diakses pelanggan
+            Kasir butuh login - Display bebas diakses pelanggan
           </p>
         </div>
 
@@ -132,7 +132,7 @@ export default function Landing() {
                   <span className="text-xs font-black">Rp28.000</span>
                 </div>
                 <div className="border-2 border-neo-ink bg-neo-green p-2 text-center text-xs font-black uppercase">
-                  Total · Rp52.000
+                  Total - Rp52.000
                 </div>
               </div>
             </div>
@@ -172,14 +172,14 @@ export default function Landing() {
             {
               icon: ShoppingCart,
               bg: "bg-neo-yellow",
-              title: "Monitor 1 — Kasir",
-              desc: "Grid produk + keranjang lengket. Validasi stok sebelum checkout, total otomatis, dan transaksi ber-ID unik (TRX-…).",
+              title: "Monitor 1 - Kasir",
+              desc: "Grid produk + keranjang lengket. Validasi stok sebelum checkout, total otomatis, dan transaksi ber-ID unik (TRX-...).",
             },
             {
               icon: MonitorPlay,
               bg: "bg-neo-blue",
-              title: "Monitor 2 — Display",
-              desc: "Menu board kontras tinggi untuk dibaca dari jarak jauh. Harga besar dan jelas — sampai stoknya habis.",
+              title: "Monitor 2 - Display",
+              desc: "Menu board kontras tinggi untuk dibaca dari jarak jauh. Harga besar dan jelas - sampai stoknya habis.",
             },
             {
               icon: Zap,
@@ -238,8 +238,8 @@ export default function Landing() {
       {/* FOOTER */}
       <footer className="border-t-[3px] border-neo-ink bg-neo-paper">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 text-xs font-black uppercase tracking-widest opacity-60">
-          <span>Warung Kita · Two-Monitor POS</span>
-          <span>Monitor 1: /kasir · Monitor 2: /display</span>
+          <span>Warung Kita - Two-Monitor POS</span>
+          <span>Monitor 1: /kasir - Monitor 2: /display</span>
         </div>
       </footer>
     </motion.div>
