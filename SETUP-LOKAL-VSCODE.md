@@ -30,7 +30,7 @@ Install sekali saja di PC kamu. Cek dulu yang sudah ada:
 
 | Software | Fungsi | Cek dengan perintah |
 |---|---|---|
-| **Node.js v20+** (rekomendasi v22 LTS) | Menjalankan project | `node -v` |
+| **Node.js v22+** (LTS) | Menjalankan project | `node -v` |
 | **npm** (ikut otomatis dengan Node) | Install package | `npm -v` |
 | **Git** | Clone & push ke GitHub | `git --version` |
 | **VS Code** | Editor kode | buka VS Code |
