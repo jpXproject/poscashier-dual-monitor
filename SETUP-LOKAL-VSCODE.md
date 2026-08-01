@@ -2,7 +2,7 @@
 
 Panduan berurutan untuk menjalankan project ini di **PC lokal** memakai **VS Code**, dirancang agar **zero error**. Ikuti langkahnya satu per satu, jangan dilewati.
 
-> Project: **1 web app, 1 database Convex, 2 monitor** (`/kasir` untuk admin, `/display` untuk pelanggan).
+> Project: **1 web app, 1 database Supabase (cloud), 2 monitor** (`/kasir` untuk admin, `/display` untuk pelanggan). **Tanpa login** — kasir langsung terbuka.
 
 ---
 
@@ -12,9 +12,9 @@ Panduan berurutan untuk menjalankan project ini di **PC lokal** memakai **VS Cod
 2. [Clone project dari GitHub](#2-clone-project-dari-github)
 3. [Install dependency (npm install)](#3-install-dependency-npm-install)
 4. [Buka project di VS Code](#4-buka-project-di-vs-code)
-5. [Hubungkan ke Convex (paling penting)](#5-hubungkan-ke-convex-paling-penting)
-6. [Buat file .env.local](#6-buat-file-envlocal)
-7. [Set env auth di deployment Convex](#7-set-env-auth-di-deployment-convex)
+5. [Buat project Supabase (paling penting)](#5-buat-project-supabase-paling-penting)
+6. [Jalankan schema.sql di SQL Editor](#6-jalankan-schemasql-di-sql-editor)
+7. [Buat file .env.local](#7-buat-file-envlocal)
 8. [Jalankan app (npm run dev)](#8-jalankan-app-npm-run-dev)
 9. [Tes 2 monitor](#9-tes-2-monitor)
 10. [Isi menu contoh](#10-isi-menu-contoh)
@@ -30,7 +30,7 @@ Install sekali saja di PC kamu. Cek dulu yang sudah ada:
 
 | Software | Fungsi | Cek dengan perintah |
 |---|---|---|
-| **Node.js v18+** (rekomendasi v20 LTS) | Menjalankan project | `node -v` |
+| **Node.js v20+** (rekomendasi v22 LTS) | Menjalankan project | `node -v` |
 | **npm** (ikut otomatis dengan Node) | Install package | `npm -v` |
 | **Git** | Clone & push ke GitHub | `git --version` |
 | **VS Code** | Editor kode | buka VS Code |
@@ -45,9 +45,8 @@ Install sekali saja di PC kamu. Cek dulu yang sudah ada:
 - `esbenp.prettier-vscode` (Prettier — format otomatis)
 - `dbaeumer.vscode-eslint` (ESLint — cek kode)
 - `bradlc.vscode-tailwindcss` (Tailwind IntelliSense)
-- `convexdev.convex` (Convex — lihat fungsi backend & database dari VS Code)
 
-> ✅ **Cek kelulusan langkah 1:** ketik `node -v` dan `npm -v` di terminal/CMD — keduanya menampilkan versi (mis. `v20.11.0` dan `10.2.4`).
+> ✅ **Cek kelulusan langkah 1:** ketik `node -v` dan `npm -v` di terminal/CMD — keduanya menampilkan versi (mis. `v22.12.0` dan `10.9.0`).
 
 ---
 
@@ -99,41 +98,49 @@ VS Code terbuka dengan project-nya. Klik **Terminal → New Terminal** di VS Cod
 
 ---
 
-## 5. Hubungkan ke Convex (paling penting)
+## 5. Buat project Supabase (paling penting)
 
-Project memakai **Convex** sebagai backend + database (di cloud). Ada 2 skenario:
+Project memakai **Supabase** sebagai database (cloud, gratis). Buat project dulu:
 
-### Opsi A — Pakai akun Convex yang sudah ada (disarankan)
+1. Buka https://supabase.com → klik **Start your project** → login (bisa pakai GitHub)
+2. Klik **New Project**
+3. Isi:
+   - **Name**: mis. `pos-dual-monitor`
+   - **Database Password**: buat password kuat, **simpan baik-baik** (dipakai kalau akses langsung ke DB)
+   - **Region**: pilih yang terdekat (mis. `Singapore`)
+4. Klik **Create new project** → tunggu ±1–2 menit sampai selesai
+5. Buka **Project Settings → API** — catat 2 nilai ini (dipakai di langkah 7):
+   - **Project URL** → contoh `https://xxxx.supabase.co`
+   - **anon public** → string panjang `eyJhbGciOi...`
 
-```bash
-npx convex dev
-```
+> ⚠️ **Jangan pernah menyebarkan `service_role` key** (kolom di bawah anon public). Itu kunci master yang hanya boleh dipakai server-side dan **tidak boleh** masuk ke `.env.local` atau ter-commit.
 
-Lalu ikuti instruksi di terminal:
-
-1. Muncul prompt login → pilih **"Sign in with GitHub"** atau email
-2. Login dengan akun yang terhubung ke deployment kamu (`jepanx76@gmail.com` dll.)
-3. Pilih **project** yang mau dipakai (mis. `jpxcode`) dan **deployment** (dev/prod)
-4. CLI otomatis membuat file `convex.json` dan `src/convex/_generated/`
-
-### Opsi B — Buat project Convex baru
-
-```bash
-npx convex dev
-```
-
-1. Pilih **"Create a new project"**
-2. Beri nama (mis. `pos-demo`)
-3. Pilih deployment **dev**
-4. Selesai — data baru mulai dari kosong
-
-> ⚠️ **Perintah ini TIDAK berhenti sendiri** — `npx convex dev` berjalan terus (watch mode). Setelah sukses, biarkan terminal ini jalan, atau tekan `Ctrl+C` setelah berhasil lalu gunakan `npx convex dev --once` untuk push manual.
-
-> ✅ **Cek kelulusan langkah 5:** muncul folder `src/convex/_generated/` (berisi `api.d.ts`, `server.d.ts`, dll.) dan file `convex.json` di root.
+> ✅ **Cek kelulusan langkah 5:** kamu punya `Project URL` dan `anon public` key dari halaman Settings → API.
 
 ---
 
-## 6. Buat file .env.local
+## 6. Jalankan schema.sql di SQL Editor
+
+Buat tabel database lewat SQL Editor (sekali saja):
+
+1. Di dashboard Supabase, klik **SQL Editor** (menu kiri)
+2. Klik **New query**
+3. Buka file `supabase/schema.sql` di project VS Code, **salin seluruh isinya**, tempel ke editor
+4. Klik **Run** (atau `Ctrl+Enter`)
+
+File ini membuat:
+- Tabel **`produk`** (nama, kategori, harga, stok, status) — plus 15 menu contoh
+- Tabel **`transaksi`** (trx_id, detail, total_bayar, created_at)
+- Fungsi **RPC `checkout()`** — atomik: validasi stok → potong stok → catat transaksi
+- RLS dimatikan (aplikasi tanpa login — baca/tulis via anon key)
+
+> 💡 **Jalankan ulang fungsi `checkout` saja** cukup aman kapan saja (menggunakan `create or replace function`) — tidak merusak data.
+
+> ✅ **Cek kelulusan langkah 6:** muncul pesan `Success. No rows returned` dan tabel `produk` berisi 15 baris menu contoh di **Table Editor**.
+
+---
+
+## 7. Buat file .env.local
 
 Di VS Code, buat file baru di root project (sejajar dengan `package.json`) dengan nama:
 
@@ -141,63 +148,31 @@ Di VS Code, buat file baru di root project (sejajar dengan `package.json`) denga
 .env.local
 ```
 
-Isi dengan URL deployment kamu:
+Isi dengan kredensial dari langkah 5:
 
 ```
-VITE_CONVEX_URL=https://<nama-deployment>.convex.cloud
+VITE_SUPABASE_URL=https://xxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOi...
 ```
 
-Ganti `<nama-deployment>` dengan nama deployment kamu. Cara cek:
-
-- Jalankan `npx convex dev` → URL-nya tampil di terminal, atau
-- Buka **dashboard.convex.cloud** → deployment kamu → salin URL-nya (format `https://xxx.convex.cloud`, **bukan** `.convex.site`)
+Ganti nilai dengan Project URL & anon public key milikmu. Contoh `.env.example` sudah disediakan sebagai template.
 
 > ⚠️ **Jangan pernah commit file ini.** Sudah otomatis dikecualikan oleh `.gitignore` — aman.
+> ⚠️ **Hanya `anon public` key** yang dipakai di sini — jangan masukkan `service_role`.
 
-> ✅ **Cek kelulusan langkah 6:** file `.env.local` ada dengan baris `VITE_CONVEX_URL=...`.
-
----
-
-## 7. Set env auth di deployment Convex
-
-Login email OTP butuh 3 variabel **di deployment Convex** (bukan di `.env.local`). Jalankan di terminal VS Code:
-
-```bash
-# 1) URL app kamu (saat lokal pakai localhost)
-npx convex env set SITE_URL http://localhost:5173
-
-# 2) Kunci JWT — generate dulu, lalu set
-npx convex auth generate
-```
-
-Perintah `npx convex auth generate` akan menampilkan `JWT_PRIVATE_KEY` dan `JWKS` — salin keduanya, lalu:
-
-```bash
-npx convex env set JWT_PRIVATE_KEY <tempel-kunci-nya>
-npx convex env set JWKS <tempel-jwks-nya>
-```
-
-> 💡 **Setelah di-hosting / production:** ulangi `npx convex env set SITE_URL https://url-asli-app-kamu` dengan URL asli, supaya link di email OTP mengarah ke alamat yang benar.
-
-> ✅ **Cek kelulusan langkah 7:** `npx convex env list` menampilkan `SITE_URL`, `JWT_PRIVATE_KEY`, `JWKS`.
+> ✅ **Cek kelulusan langkah 7:** file `.env.local` ada dengan 2 baris `VITE_SUPABASE_URL=...` dan `VITE_SUPABASE_ANON_KEY=...`.
 
 ---
 
 ## 8. Jalankan app (npm run dev)
 
-Buka **dua terminal** di VS Code:
+Cukup **satu terminal** (backend Supabase sudah di cloud):
 
-**Terminal 1 — Convex (biarkan jalan):**
-```bash
-npx convex dev
-```
-
-**Terminal 2 — Frontend:**
 ```bash
 npm run dev
 ```
 
-Setelah sukses, terminal 2 menampilkan alamat, biasanya:
+Setelah sukses, terminal menampilkan alamat, biasanya:
 
 ```
   ➜  Local:   http://localhost:5173/
@@ -213,14 +188,13 @@ Buka **dua jendela/tab browser** sekaligus:
 
 | Monitor | URL | Keterangan |
 |---|---|---|
-| Monitor 1 — **Kasir** | `http://localhost:5173/kasir` | Butuh login (email OTP) |
-| Monitor 2 — **Display** | `http://localhost:5173/display` | Publik, tanpa login |
+| Monitor 1 — **Kasir** | `http://localhost:5173/kasir` | Langsung terbuka, **tanpa login** |
+| Monitor 2 — **Display** | `http://localhost:5173/display` | Publik, untuk pelanggan |
 
 **Alur tes cepat:**
 1. Tab 2 → buka `/display` → tampil menu pelanggan
-2. Tab 1 → buka `/kasir` → login email OTP (cek inbox email kamu untuk kode)
-3. Tab 1 → klik produk → masuk keranjang → **Bayar**
-4. Tab 2 → menu/stok berubah otomatis ✅ (realtime Convex + polling 4 detik)
+2. Tab 1 → buka `/kasir` → langsung masuk, klik produk → masuk keranjang → **Bayar**
+3. Tab 2 → menu/stok berubah otomatis ✅ (polling 4 detik)
 
 ---
 
@@ -240,13 +214,12 @@ Atau tambah manual lewat form di tab yang sama.
 | Kebutuhan | Perintah |
 |---|---|
 | Jalankan frontend | `npm run dev` |
-| Push backend ke Convex (sekali jalan, lalu selesai) | `npx convex dev --once` |
 | Cek tipe TypeScript | `npx tsc -b --noEmit` |
 | Build produksi | `npm run build` |
 | Cek lint | `npm run lint` |
 | Format file | `npm run format` |
-| Set env backend | `npx convex env set <NAMA> <nilai>` |
-| Lihat env backend | `npx convex env list` |
+| Cek data di tabel | Supabase Dashboard → **Table Editor** (produk / transaksi) |
+| Tes RPC checkout manual | Supabase Dashboard → **SQL Editor** → `select public.checkout('[{"id":"<uuid>","qty":1}]', 10000);` — ⚠️ ini membuat transaksi tes nyata (potong stok + catat di tabel `transaksi`), cek Table Editor setelahnya |
 
 ---
 
@@ -259,14 +232,15 @@ Jika ada error, cek satu per satu sesuai gejalanya:
 | `'npm' is not recognized` | Node.js belum terinstall | Install Node.js LTS dari nodejs.org, buka ulang terminal |
 | `Could not read from remote repository` (saat clone) | Git belum terinstall / repo tidak ada | Install Git; pastikan URL benar |
 | `Module not found: 'react'` | `node_modules` belum lengkap | Hapus `node_modules` + `package-lock.json`, jalankan `npm install` ulang |
-| `VITE_CONVEX_URL is missing` / app blank | `.env.local` belum dibuat | Buat `.env.local` sesuai [langkah 6](#6-buat-file-envlocal) |
-| `Did you forget to run convex dev?` | Backend belum terhubung | Jalankan `npx convex dev --once`, pastikan `convex.json` ada |
-| `401 / auth failed` saat `npx convex dev` | Belum login CLI | Jalankan ulang `npx convex dev` dan login |
-| Login email OTP tidak jalan / kode tidak terkirim | Env auth belum di-set | Set `SITE_URL`, `JWT_PRIVATE_KEY`, `JWKS` ([langkah 7](#7-set-env-auth-di-deployment-convex)) |
+| App blank / console warning `[supabase] ... belum di-set` | `.env.local` belum dibuat / kosong | Buat `.env.local` sesuai [langkah 7](#7-buat-file-envlocal) |
+| `Failed to fetch` / "Gagal memuat menu" di Kasir/Display | Project URL atau anon key salah | Cek kembali kedua nilai di [langkah 5](#5-buat-project-supabase-paling-penting) & 7 |
+| `relation "public.produk" does not exist` | schema.sql belum dijalankan | Jalankan `supabase/schema.sql` di SQL Editor ([langkah 6](#6-jalankan-schemasql-di-sql-editor)) |
+| `function public.checkout(...) does not exist` | Fungsi RPC belum dibuat | Jalankan ulang bagian `create or replace function` dari schema.sql |
+| `Stok ... tidak mencukupi` saat Bayar | Stok habis di database | Tambah stok di tab "Atur Menu" atau lewat Table Editor |
 | Port 5173 sudah dipakai | Ada proses lain | Pakai port lain: `npm run dev -- --port 5174` |
 | `Type error` di VS Code | File belum tersimpan / salah ketik | Save (`Ctrl+S`), lalu `npx tsc -b --noEmit` untuk cek |
 
-**Trik zero-error paling ampuh:** jalankan `npx convex dev --once && npx tsc -b --noEmit` setelah mengubah kode backend, dan `npx tsc -b --noEmit` setelah mengubah kode frontend — error apa pun akan muncul lebih dulu di terminal, sebelum tampil di browser.
+**Trik zero-error paling ampuh:** jalankan `npx tsc -b --noEmit && npm run lint` setelah mengubah kode — error apa pun akan muncul lebih dulu di terminal, sebelum tampil di browser.
 
 ---
 
@@ -280,7 +254,7 @@ git commit -m "deskripsi perubahan"
 git push
 ```
 
-> ⚠️ **Pastikan `.env.local` tidak pernah ter-commit** — sudah dikecualikan `.gitignore`. Kalau suatu saat terlanjur ke-push, segera revoke/regenerate key-nya di dashboard Convex & GitHub.
+> ⚠️ **Pastikan `.env.local` tidak pernah ter-commit** — sudah dikecualikan `.gitignore`. Kalau suatu saat terlanjur ke-push, segera revoke/regenerate anon key di dashboard Supabase & hapus dari riwayat git.
 
 ---
 
@@ -291,11 +265,11 @@ git push
 2. git clone https://github.com/jpXproject/poscashier-dual-monitor.git
 3. npm install
 4. code .
-5. npx convex dev                           (login + hubungkan)
-6. buat .env.local                          (VITE_CONVEX_URL)
-7. npx convex auth generate + env set ×3    (auth OTP)
+5. buat project Supabase                  (Project URL + anon key)
+6. jalankan supabase/schema.sql di SQL Editor
+7. buat .env.local                        (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)
 8. npm run dev
-9. buka /kasir dan /display                 (2 monitor)
+9. buka /kasir dan /display               (2 monitor, tanpa login)
 10. Muat Menu Contoh → selesai! 🎉
 ```
 
