@@ -5,6 +5,13 @@ import { mutation, query } from "./_generated/server";
 const TAMPIL = "Tampilkan";
 const SEMBUNYI = "Sembunyikan";
 
+export const KATEGORI = ["Makanan", "Minuman"] as const;
+export type Kategori = (typeof KATEGORI)[number];
+
+const kategoriValidator = v.union(
+  ...KATEGORI.map((k) => v.literal(k)),
+);
+
 /**
  * List products. Used by the cashier (all rows), the menu display
  * (tampilOnly=true), and the management panel.
@@ -28,22 +35,28 @@ export const list = query({
   },
 });
 
-const SAMPLE_MENU = [
-  { nama: "Kopi Hitam", harga: 18000, stok: 40, status: TAMPIL },
-  { nama: "Kopi Susu Gula Aren", harga: 24000, stok: 35, status: TAMPIL },
-  { nama: "Es Teh Manis", harga: 8000, stok: 60, status: TAMPIL },
-  { nama: "Teh Tarik", harga: 15000, stok: 25, status: TAMPIL },
-  { nama: "Nasi Goreng Spesial", harga: 28000, stok: 20, status: TAMPIL },
-  { nama: "Mie Goreng Jawa", harga: 24000, stok: 0, status: TAMPIL },
-  { nama: "Kentang Goreng", harga: 18000, stok: 30, status: TAMPIL },
-  { nama: "Roti Bakar Coklat", harga: 16000, stok: 18, status: TAMPIL },
-  { nama: "Pisang Goreng", harga: 12000, stok: 22, status: TAMPIL },
-  { nama: "Es Jeruk", harga: 12000, stok: 45, status: TAMPIL },
-  { nama: "Coklat Panas", harga: 17000, stok: 15, status: TAMPIL },
-  { nama: "Brownies Lumer", harga: 22000, stok: 12, status: TAMPIL },
-  { nama: "Air Mineral", harga: 5000, stok: 100, status: TAMPIL },
-  { nama: "Jus Alpukat", harga: 20000, stok: 0, status: TAMPIL },
-  { nama: "Donat Gula", harga: 10000, stok: 28, status: SEMBUNYI },
+const SAMPLE_MENU: {
+  nama: string;
+  kategori: Kategori;
+  harga: number;
+  stok: number;
+  status: string;
+}[] = [
+  { nama: "Kopi Hitam", kategori: "Minuman", harga: 18000, stok: 40, status: TAMPIL },
+  { nama: "Kopi Susu Gula Aren", kategori: "Minuman", harga: 24000, stok: 35, status: TAMPIL },
+  { nama: "Es Teh Manis", kategori: "Minuman", harga: 8000, stok: 60, status: TAMPIL },
+  { nama: "Teh Tarik", kategori: "Minuman", harga: 15000, stok: 25, status: TAMPIL },
+  { nama: "Nasi Goreng Spesial", kategori: "Makanan", harga: 28000, stok: 20, status: TAMPIL },
+  { nama: "Mie Goreng Jawa", kategori: "Makanan", harga: 24000, stok: 0, status: TAMPIL },
+  { nama: "Kentang Goreng", kategori: "Makanan", harga: 18000, stok: 30, status: TAMPIL },
+  { nama: "Roti Bakar Coklat", kategori: "Makanan", harga: 16000, stok: 18, status: TAMPIL },
+  { nama: "Pisang Goreng", kategori: "Makanan", harga: 12000, stok: 22, status: TAMPIL },
+  { nama: "Es Jeruk", kategori: "Minuman", harga: 12000, stok: 45, status: TAMPIL },
+  { nama: "Coklat Panas", kategori: "Minuman", harga: 17000, stok: 15, status: TAMPIL },
+  { nama: "Brownies Lumer", kategori: "Makanan", harga: 22000, stok: 12, status: TAMPIL },
+  { nama: "Air Mineral", kategori: "Minuman", harga: 5000, stok: 100, status: TAMPIL },
+  { nama: "Jus Alpukat", kategori: "Minuman", harga: 20000, stok: 0, status: TAMPIL },
+  { nama: "Donat Gula", kategori: "Makanan", harga: 10000, stok: 28, status: SEMBUNYI },
 ];
 
 /** Seed the menu with sample items (only if the Produk table is empty). */
@@ -70,6 +83,9 @@ export const save = mutation({
   args: {
     id: v.optional(v.id("produk")),
     nama: v.string(),
+    // optional so legacy callers still work; the UI always sends an explicit
+    // category. Missing values default to "Makanan".
+    kategori: v.optional(kategoriValidator),
     harga: v.number(),
     stok: v.number(),
     status: v.string(),
@@ -87,7 +103,13 @@ export const save = mutation({
     if (args.status !== TAMPIL && args.status !== SEMBUNYI) {
       throw new Error("Status tidak valid.");
     }
-    const payload = { nama, harga: args.harga, stok: args.stok, status: args.status };
+    const payload = {
+      nama,
+      kategori: args.kategori ?? "Makanan",
+      harga: args.harga,
+      stok: args.stok,
+      status: args.status,
+    };
     if (args.id) {
       await ctx.db.patch(args.id, payload);
       return { id: args.id };

@@ -6,6 +6,22 @@ import { Link } from "react-router";
 
 const POLL_MS = 4000;
 
+const KATEGORI_FILTERS = ["Semua", "Makanan", "Minuman"] as const;
+type KategoriFilter = (typeof KATEGORI_FILTERS)[number];
+type Kategori = "Makanan" | "Minuman";
+
+function KategoriChip({ kategori }: { kategori: Kategori }) {
+  return (
+    <span
+      className={`mt-2 inline-block border-2 border-neo-ink px-2 py-0.5 text-sm font-black uppercase leading-none ${
+        kategori === "Makanan" ? "bg-neo-orange" : "bg-neo-turquoise"
+      }`}
+    >
+      {kategori}
+    </span>
+  );
+}
+
 function useClock() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -31,8 +47,19 @@ export default function Display() {
   const produk = useQuery(api.produk.list, { tampilOnly: true, tick });
   const now = useClock();
 
-  const inStock = (produk ?? []).filter((p) => p.stok > 0);
-  const soldOut = (produk ?? []).filter((p) => p.stok <= 0);
+  const [filter, setFilter] = useState<KategoriFilter>("Semua");
+  const filtered =
+    filter === "Semua"
+      ? produk
+      : (produk ?? []).filter((p) => p.kategori === filter);
+
+  const inStock = (filtered ?? []).filter((p) => p.stok > 0);
+  const soldOut = (filtered ?? []).filter((p) => p.stok <= 0);
+
+  const countFor = (k: KategoriFilter) =>
+    k === "Semua"
+      ? produk?.length ?? 0
+      : (produk ?? []).filter((p) => p.kategori === k).length;
 
   return (
     <div className="min-h-screen bg-neo-ink text-neo-cream flex flex-col">
@@ -64,12 +91,40 @@ export default function Display() {
         </div>
       </header>
 
+      {/* Category filter buttons */}
+      {produk !== undefined && (
+        <div className="flex flex-wrap items-center justify-center gap-3 border-b-[3px] border-neo-cream px-6 py-4">
+          {KATEGORI_FILTERS.map((k) => (
+            <button
+              key={k}
+              onClick={() => setFilter(k)}
+              className={`border-[3px] border-neo-cream px-6 py-2 text-2xl font-black uppercase tracking-wide transition-colors neo-press-sm ${
+                filter === k
+                  ? "bg-neo-yellow text-neo-ink"
+                  : "bg-neo-paper text-neo-ink hover:bg-neo-cream"
+              }`}
+            >
+              {k} <span className="text-lg opacity-60">({countFor(k)})</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Product grid */}
       <main className="flex-1 px-6 py-8">
         {produk === undefined ? (
           <p className="text-2xl font-bold uppercase animate-pulse">
             Memuat menu…
           </p>
+        ) : inStock.length === 0 && soldOut.length === 0 ? (
+          <div className="border-[3px] border-dashed border-neo-cream p-10 text-center">
+            <p className="text-3xl font-black uppercase">
+              Tidak ada menu untuk kategori ini
+            </p>
+            <p className="mt-2 text-lg font-bold uppercase opacity-60">
+              Silakan pilih kategori lain
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-2 gap-5 md:grid-cols-3 xl:grid-cols-4">
             {inStock.map((p) => (
@@ -78,9 +133,12 @@ export default function Display() {
                 className="bg-neo-paper text-neo-ink border-[3px] border-neo-cream neo-shadow p-5 flex flex-col justify-between gap-4 min-h-44"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <h2 className="text-2xl font-black uppercase leading-tight">
-                    {p.nama}
-                  </h2>
+                  <div className="min-w-0">
+                    <h2 className="text-2xl font-black uppercase leading-tight">
+                      {p.nama}
+                    </h2>
+                    <KategoriChip kategori={p.kategori} />
+                  </div>
                   <span className="shrink-0 border-2 border-neo-ink bg-neo-yellow px-2 py-0.5 text-sm font-black">
                     SISA {p.stok}
                   </span>
@@ -101,9 +159,12 @@ export default function Display() {
                 aria-label={`${p.nama} — habis`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <h2 className="text-2xl font-black uppercase leading-tight">
-                    {p.nama}
-                  </h2>
+                  <div className="min-w-0">
+                    <h2 className="text-2xl font-black uppercase leading-tight">
+                      {p.nama}
+                    </h2>
+                    <KategoriChip kategori={p.kategori} />
+                  </div>
                   <span className="shrink-0 border-2 border-neo-ink bg-neo-red px-2 py-1 text-sm font-black uppercase text-white -rotate-2">
                     Habis
                   </span>

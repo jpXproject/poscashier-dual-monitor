@@ -34,10 +34,11 @@ const schema = defineSchema(
 
     // Two-monitor POS: product menu (Produk) and sales records (Transaksi).
     // Mirrors the Google Sheets layout from the original Apps Script design:
-    //   Produk:    Nama | Harga | Stok | Status
+    //   Produk:    Nama | Kategori | Harga | Stok | Status
     //   Transaksi: Timestamp | ID Transaksi | Detail Pesanan | Total Bayar
     produk: defineTable({
       nama: v.string(), // product name
+      kategori: v.union(v.literal("Makanan"), v.literal("Minuman")), // category tag
       harga: v.number(), // price in IDR
       stok: v.number(), // remaining stock
       status: v.string(), // "Tampilkan" (visible on display) | "Sembunyikan"

@@ -9,7 +9,6 @@ import { useMutation, useQuery } from "convex/react";
 import {
   ArrowRight,
   History,
-  LayoutDashboard,
   Loader2,
   LogOut,
   MonitorPlay,
@@ -32,6 +31,22 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
+
+const KATEGORI_FILTERS = ["Semua", "Makanan", "Minuman"] as const;
+type KategoriFilter = (typeof KATEGORI_FILTERS)[number];
+type Kategori = "Makanan" | "Minuman";
+
+function KategoriChip({ kategori }: { kategori: Kategori }) {
+  return (
+    <span
+      className={`mt-1 inline-block border-2 border-neo-ink px-1.5 py-0.5 text-[10px] font-black uppercase leading-none ${
+        kategori === "Makanan" ? "bg-neo-orange" : "bg-neo-turquoise"
+      }`}
+    >
+      {kategori}
+    </span>
+  );
+}
 
 function StockBadge({ stok }: { stok: number }) {
   if (stok <= 0) {
@@ -269,6 +284,18 @@ function KasirView({
   handleCheckout,
   checkoutLoading,
 }: KasirViewProps) {
+  const [filter, setFilter] = useState<KategoriFilter>("Semua");
+  const filtered = (
+    filter === "Semua"
+      ? produk
+      : (produk ?? []).filter((p) => p.kategori === filter)
+  ) ?? [];
+
+  const countFor = (k: KategoriFilter) =>
+    k === "Semua"
+      ? produk?.length ?? 0
+      : (produk ?? []).filter((p) => p.kategori === k).length;
+
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 lg:flex-row">
       {/* LEFT: product grid */}
@@ -283,15 +310,41 @@ function KasirView({
           {produk === undefined && <Loader2 className="size-5 animate-spin" />}
         </div>
 
+        {/* Category filter buttons */}
+        {produk !== undefined && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {KATEGORI_FILTERS.map((k) => (
+              <button
+                key={k}
+                onClick={() => setFilter(k)}
+                className={`border-2 border-neo-ink px-3 py-1.5 text-sm font-black uppercase tracking-wide transition-colors ${
+                  filter === k
+                    ? "bg-neo-ink text-neo-cream"
+                    : "bg-neo-paper hover:bg-neo-yellow"
+                }`}
+              >
+                {k} <span className="opacity-60">({countFor(k)})</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {produk === undefined ? (
           <p className="text-sm font-semibold uppercase opacity-60 animate-pulse">
             Memuat menu…
           </p>
-        ) : produk.length === 0 ? (
-          <EmptyMenuNotice />
+        ) : filtered.length === 0 ? (
+          <div className="border-[3px] border-dashed border-neo-ink bg-neo-paper p-8 text-center">
+            <p className="text-lg font-black uppercase">
+              Tidak ada produk untuk kategori ini
+            </p>
+            <p className="mt-1 text-sm font-semibold opacity-60">
+              Coba pilih filter lain atau tambahkan produk di tab "Atur Menu".
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-            {produk.map((p) => {
+            {filtered.map((p) => {
               const inCart = (cart[p._id]?.qty ?? 0) > 0;
               return (
                 <button
@@ -305,9 +358,12 @@ function KasirView({
                   } ${inCart ? "bg-neo-turquoise" : ""}`}
                 >
                   <div className="flex w-full items-start justify-between gap-2">
-                    <h3 className="text-base font-black uppercase leading-tight">
-                      {p.nama}
-                    </h3>
+                    <div className="min-w-0">
+                      <h3 className="text-base font-black uppercase leading-tight">
+                        {p.nama}
+                      </h3>
+                      <KategoriChip kategori={p.kategori} />
+                    </div>
                     <StockBadge stok={p.stok} />
                   </div>
                   <div className="flex w-full items-center justify-between gap-2">
@@ -463,6 +519,7 @@ function MenuManager() {
   const [saving, setSaving] = useState(false);
 
   const [nama, setNama] = useState("");
+  const [kategori, setKategori] = useState<Kategori>("Makanan");
   const [harga, setHarga] = useState("");
   const [stok, setStok] = useState("");
   const [status, setStatus] = useState<"Tampilkan" | "Sembunyikan">("Tampilkan");
@@ -489,7 +546,7 @@ function MenuManager() {
       return toast.error("Stok harus angka valid.");
     setSaving(true);
     try {
-      await save({ nama, harga: hargaNum, stok: stokNum, status });
+      await save({ nama, kategori, harga: hargaNum, stok: stokNum, status });
       toast.success(`Produk "${nama}" disimpan.`);
       setNama("");
       setHarga("");
@@ -506,12 +563,14 @@ function MenuManager() {
     current: string,
     pNama: string,
   ) => {
+    const existing = (produk ?? []).find((x) => x._id === id);
     try {
       await save({
         id,
         nama: pNama,
-        harga: (produk ?? []).find((x) => x._id === id)?.harga ?? 0,
-        stok: (produk ?? []).find((x) => x._id === id)?.stok ?? 0,
+        kategori: existing?.kategori ?? "Makanan",
+        harga: existing?.harga ?? 0,
+        stok: existing?.stok ?? 0,
         status: current === "Tampilkan" ? "Sembunyikan" : "Tampilkan",
       });
       toast.success(`Status "${pNama}" diubah.`);
@@ -554,7 +613,7 @@ function MenuManager() {
           e.preventDefault();
           handleSave();
         }}
-        className="mb-6 grid gap-3 border-[3px] border-neo-ink bg-neo-paper p-4 neo-shadow-sm sm:grid-cols-2 lg:grid-cols-5"
+        className="mb-6 grid gap-3 border-[3px] border-neo-ink bg-neo-paper p-4 neo-shadow-sm sm:grid-cols-2 lg:grid-cols-6"
       >
         <div className="lg:col-span-2">
           <label className="mb-1 block text-xs font-black uppercase tracking-wide">
@@ -566,6 +625,19 @@ function MenuManager() {
             placeholder="cth: Es Teh Manis"
             className="rounded-none border-2 border-neo-ink bg-neo-cream"
           />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-black uppercase tracking-wide">
+            Kategori
+          </label>
+          <select
+            value={kategori}
+            onChange={(e) => setKategori(e.target.value as Kategori)}
+            className="h-9 w-full rounded-none border-2 border-neo-ink bg-neo-cream px-2 text-sm font-bold"
+          >
+            <option value="Makanan">Makanan</option>
+            <option value="Minuman">Minuman</option>
+          </select>
         </div>
         <div>
           <label className="mb-1 block text-xs font-black uppercase tracking-wide">
@@ -609,7 +681,7 @@ function MenuManager() {
         <Button
           type="submit"
           disabled={saving}
-          className="rounded-none border-2 border-neo-ink bg-neo-blue font-black uppercase text-white neo-shadow-sm neo-press sm:col-span-2 lg:col-span-5"
+          className="rounded-none border-2 border-neo-ink bg-neo-blue font-black uppercase text-white neo-shadow-sm neo-press sm:col-span-2 lg:col-span-6"
         >
           {saving ? (
             <Loader2 className="size-4 animate-spin" />
@@ -635,10 +707,11 @@ function MenuManager() {
               className="flex flex-wrap items-center justify-between gap-3 border-2 border-neo-ink bg-neo-paper p-3"
             >
               <div className="min-w-0">
-                <p className="font-black uppercase leading-tight">
+                <p className="flex flex-wrap items-center gap-2 font-black uppercase leading-tight">
                   {p.nama}
+                  <KategoriChip kategori={p.kategori} />
                   {p.status === "Sembunyikan" && (
-                    <span className="ml-2 text-xs font-bold uppercase opacity-50">
+                    <span className="text-xs font-bold uppercase opacity-50">
                       (tersembunyi)
                     </span>
                   )}
