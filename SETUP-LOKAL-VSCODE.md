@@ -219,7 +219,7 @@ Atau tambah manual lewat form di tab yang sama.
 | Cek lint | `npm run lint` |
 | Format file | `npm run format` |
 | Cek data di tabel | Supabase Dashboard → **Table Editor** (produk / transaksi) |
-| Tes RPC checkout manual | Supabase Dashboard → **SQL Editor** → `select public.checkout('[{"id":"<uuid>","qty":1}]', 10000);` — ⚠️ ini membuat transaksi tes nyata (potong stok + catat di tabel `transaksi`), cek Table Editor setelahnya |
+| Tes RPC checkout manual | Supabase Dashboard → **SQL Editor** → `select public.checkout('[{"id":"<uuid>","qty":1}]', 10000);` — ganti `<uuid>` dengan id asli produk dari **Table Editor**; ⚠️ ini membuat transaksi tes nyata (potong stok + catat di tabel `transaksi`) |
 
 ---
 
